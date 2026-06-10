@@ -1,90 +1,106 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { chatAPI } from '../services/api';
+
+const WELCOME = 'Hi! I am your Healytics AI assistant. Describe your symptoms and I will help identify the right specialist and urgency level. 🏥';
 
 const Chatbot = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState([
-    {
-      role: 'bot',
-      text: 'Hi! I am your Healytics assistant. Describe your symptoms and I will recommend the right doctor or hospital. 🏥',
-    },
-  ]);
+  const [messages, setMessages] = useState([{ role: 'bot', text: WELCOME }]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const bottomRef = useRef(null);
 
-  const symptomResponses = {
-    chest: { reply: 'Chest pain can be serious. I recommend seeing a Cardiologist immediately. Koç University Hospital and Acıbadem Maslak Hospital have excellent cardiology departments.', urgency: '🔴 Urgent' },
-    headache: { reply: 'Persistent headaches may need a Neurologist. Florence Nightingale Hospital and Acıbadem Maslak have great neurology teams.', urgency: '🟡 Routine' },
-    fever: { reply: 'For fever, a General Practitioner is usually the first step. Okmeydanı Training Hospital or Medipol Mega are good options.', urgency: '🟡 Routine' },
-    back: { reply: 'Back pain is often treated by a Physiotherapist or Orthopedic specialist. Memorial Şişli and Hisar Intercontinental Hospital are recommended.', urgency: '🟡 Routine' },
-    child: { reply: 'For children, you need a Pediatrician. Amerikan Hastanesi and Anadolu Medical Center have excellent pediatrics departments.', urgency: '🟡 Routine' },
-    knee: { reply: 'Knee or joint pain is handled by Orthopedic specialists. Memorial Şişli Hospital is highly recommended.', urgency: '🟡 Routine' },
-    stomach: { reply: 'Stomach issues are usually treated by a General Practitioner. Start with Okmeydanı Training Hospital or Medipol Mega.', urgency: '🟢 Routine' },
-    breath: { reply: 'Breathing difficulties can be serious. Please visit a Cardiologist or General Emergency. Medipol Mega and Koç University Hospital are recommended.', urgency: '🔴 Urgent' },
-  };
+  useEffect(() => {
+    if (isOpen) bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, isOpen]);
 
-  const getResponse = (text) => {
-    const lower = text.toLowerCase();
-    for (const [keyword, response] of Object.entries(symptomResponses)) {
-      if (lower.includes(keyword)) {
-        return `${response.urgency}\n\n${response.reply}\n\n⚠️ This is not a medical diagnosis. Please consult a doctor.`;
-      }
-    }
-    return "I understand you're not feeling well. Could you describe your symptoms in more detail? For example: chest pain, headache, fever, back pain, etc.\n\n⚠️ This is not a medical diagnosis.";
-  };
+  const sendMessage = async () => {
+    const text = input.trim();
+    if (!text || loading) return;
 
-  const sendMessage = () => {
-    if (!input.trim()) return;
-    const userMessage = { role: 'user', text: input };
-    setMessages((prev) => [...prev, userMessage]);
+    const userMessage = { role: 'user', text };
+    const updatedMessages = [...messages, userMessage];
+    setMessages(updatedMessages);
     setInput('');
     setLoading(true);
-    setTimeout(() => {
-      const botReply = { role: 'bot', text: getResponse(input) };
-      setMessages((prev) => [...prev, botReply]);
+
+    try {
+      const res = await chatAPI.send(updatedMessages.filter((m) => m.role !== 'bot' || m.text !== WELCOME));
+      setMessages((prev) => [...prev, { role: 'bot', text: res.data.reply }]);
+    } catch (err) {
+      const errText = err.response?.data?.message || 'Connection error. Please try again.';
+      setMessages((prev) => [...prev, { role: 'bot', text: `⚠️ ${errText}` }]);
+    } finally {
       setLoading(false);
-    }, 800);
+    }
   };
 
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter') sendMessage();
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  };
+
+  const handleReset = () => {
+    setMessages([{ role: 'bot', text: WELCOME }]);
+    setInput('');
   };
 
   return (
     <div className="fixed bottom-4 right-4 z-50">
-      {/* Chat window */}
       {isOpen && (
-        <div className="mb-3 w-80 bg-white rounded-2xl shadow-xl border flex flex-col" style={{ height: '420px' }}>
+        <div className="mb-3 w-80 bg-white rounded-2xl shadow-xl border flex flex-col" style={{ height: '440px' }}>
           {/* Header */}
-          <div className="p-3 border-b flex items-center gap-2 bg-green-500 rounded-t-2xl">
+          <div className="p-3 border-b flex items-center gap-2 bg-blue-600 rounded-t-2xl">
             <div className="w-2 h-2 rounded-full bg-white animate-pulse"></div>
-            <span className="text-white font-medium text-sm">Healytics Assistant</span>
-            <button onClick={() => setIsOpen(false)} className="ml-auto text-white hover:text-green-100 text-lg">×</button>
+            <span className="text-white font-medium text-sm flex-1">Healytics AI</span>
+            <button
+              onClick={handleReset}
+              className="text-white/70 hover:text-white text-xs mr-1"
+              title="New conversation"
+            >
+              ↺
+            </button>
+            <button onClick={() => setIsOpen(false)} className="text-white hover:text-green-100 text-lg leading-none">×</button>
           </div>
 
           {/* Messages */}
           <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-2">
             {messages.map((msg, i) => (
               <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-xs px-3 py-2 rounded-2xl text-xs leading-relaxed whitespace-pre-line ${
-                  msg.role === 'user'
-                    ? 'bg-green-500 text-white rounded-br-none'
-                    : 'bg-gray-100 text-gray-800 rounded-bl-none'
-                }`}>
+                {msg.role === 'bot' && (
+                  <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center text-xs mr-1.5 mt-auto flex-shrink-0">
+                    🤖
+                  </div>
+                )}
+                <div
+                  className={`max-w-[220px] px-3 py-2 rounded-2xl text-xs leading-relaxed whitespace-pre-line ${
+                    msg.role === 'user'
+                      ? 'bg-blue-600 text-white rounded-br-none'
+                      : 'bg-gray-100 text-gray-800 rounded-bl-none'
+                  }`}
+                >
                   {msg.text}
                 </div>
               </div>
             ))}
+
             {loading && (
-              <div className="flex justify-start">
+              <div className="flex justify-start items-end gap-1.5">
+                <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center text-xs flex-shrink-0">
+                  🤖
+                </div>
                 <div className="bg-gray-100 px-3 py-2 rounded-2xl rounded-bl-none">
                   <div className="flex gap-1">
                     <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce"></div>
-                    <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                    <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                    <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.15s' }}></div>
+                    <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.3s' }}></div>
                   </div>
                 </div>
               </div>
             )}
+            <div ref={bottomRef} />
           </div>
 
           {/* Input */}
@@ -93,13 +109,15 @@ const Chatbot = () => {
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyPress={handleKeyPress}
+              onKeyDown={handleKeyDown}
               placeholder="Describe your symptoms..."
-              className="flex-1 border rounded-full px-3 py-1.5 text-xs focus:outline-none focus:border-green-400"
+              disabled={loading}
+              className="flex-1 border rounded-full px-3 py-1.5 text-xs focus:outline-none focus:border-blue-400 disabled:opacity-50"
             />
             <button
               onClick={sendMessage}
-              className="w-7 h-7 bg-green-500 rounded-full flex items-center justify-center text-white hover:bg-green-600 flex-shrink-0"
+              disabled={loading || !input.trim()}
+              className="w-7 h-7 bg-blue-600 rounded-full flex items-center justify-center text-white hover:bg-blue-700 flex-shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               ↑
             </button>
@@ -107,10 +125,9 @@ const Chatbot = () => {
         </div>
       )}
 
-      {/* Toggle button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-12 h-12 bg-green-500 rounded-full shadow-lg flex items-center justify-center text-white hover:bg-green-600 transition-colors ml-auto"
+        className="w-12 h-12 bg-blue-600 rounded-full shadow-lg flex items-center justify-center text-white hover:bg-blue-700 transition-colors ml-auto"
       >
         {isOpen ? '×' : '💬'}
       </button>
