@@ -88,6 +88,7 @@ const Appointments = () => {
   const [reason, setReason] = useState('');
   const [error, setError] = useState('');
   const [confirmCancel, setConfirmCancel] = useState(null);
+  const [filter, setFilter] = useState('All');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -270,8 +271,25 @@ const Appointments = () => {
 
           {/* Appointments list */}
           <div className="bg-white rounded-xl border overflow-hidden">
-            <div className="px-5 py-3 border-b bg-gray-50">
-              <span className="text-sm font-medium text-gray-700">All appointments ({appointments.length})</span>
+            <div className="px-5 py-3 border-b bg-gray-50 flex items-center justify-between">
+              <span className="text-sm font-medium text-gray-700">
+                Appointments ({appointments.filter(a => filter === 'All' || a.Status === filter).length})
+              </span>
+              <div className="flex gap-1">
+                {['All', 'Pending', 'Completed', 'Cancelled'].map(f => (
+                  <button
+                    key={f}
+                    onClick={() => setFilter(f)}
+                    className={`text-xs px-3 py-1 rounded-full border transition-colors ${
+                      filter === f
+                        ? 'bg-blue-600 text-white border-blue-600'
+                        : 'text-gray-500 border-gray-200 hover:border-blue-300'
+                    }`}
+                  >
+                    {f}
+                  </button>
+                ))}
+              </div>
             </div>
             {appointments.length === 0 ? (
               <EmptyState
@@ -282,7 +300,7 @@ const Appointments = () => {
                 actionLabel="+ Book appointment"
               />
             ) : (
-              appointments.map((appt, i) => (
+              appointments.filter(a => filter === 'All' || a.Status === filter).map((appt, i) => (
                 <AppointmentRow
                   key={appt.AppointmentID}
                   appt={appt}

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import Sidebar from '../components/Sidebar';
 import { useToast } from '../context/ToastContext';
-import { doctorAPI, prescriptionAPI } from '../services/api';
+import { doctorAPI, prescriptionAPI, medicalAPI } from '../services/api';
 
 const DoctorDashboard = () => {
   const { user } = useAuth();
@@ -16,6 +16,7 @@ const DoctorDashboard = () => {
   const [availability, setAvailability] = useState('Available');
   const [savedRecordID, setSavedRecordID] = useState(null);
   const [showRx, setShowRx] = useState(false);
+  const [patientRecords, setPatientRecords] = useState([]);
   const [medication, setMedication] = useState('');
   const [dosage, setDosage] = useState('');
   const [frequency, setFrequency] = useState('');
@@ -43,6 +44,16 @@ const DoctorDashboard = () => {
     };
     fetchData();
   }, [user.refID]);
+
+  const selectPatient = async (appt) => {
+    setSelectedPatient(appt);
+    setShowAddRecord(false);
+    setPatientRecords([]);
+    try {
+      const res = await medicalAPI.getByPatient(appt.PatientID);
+      setPatientRecords(res.data);
+    } catch (_) {}
+  };
 
   const updateStatus = async (appointmentID, status) => {
     try {
@@ -183,7 +194,7 @@ const DoctorDashboard = () => {
                   <div
                     key={appt.AppointmentID}
                     className={`bg-white rounded-xl border p-4 mb-3 cursor-pointer transition-all ${selectedPatient?.AppointmentID === appt.AppointmentID ? 'border-blue-400' : 'hover:border-gray-300'}`}
-                    onClick={() => setSelectedPatient(appt)}
+                    onClick={() => selectPatient(appt)}
                   >
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 text-xs font-medium flex-shrink-0">
@@ -224,6 +235,24 @@ const DoctorDashboard = () => {
                         {appt.SymptomInput && (
                           <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-3 text-xs text-amber-800">
                             <span className="font-medium">Patient reported symptoms: </span>{appt.SymptomInput}
+                          </div>
+                        )}
+
+                        {patientRecords.length > 0 && (
+                          <div className="mb-3">
+                            <div className="text-xs font-semibold text-gray-600 mb-1.5">Previous Medical Records</div>
+                            <div className="space-y-1.5 max-h-36 overflow-y-auto">
+                              {patientRecords.map(rec => (
+                                <div key={rec.RecordID} className="bg-gray-50 rounded-lg px-3 py-2 border text-xs">
+                                  <div className="flex justify-between text-gray-400 mb-0.5">
+                                    <span>{new Date(rec.VisitDate).toLocaleDateString()}</span>
+                                    <span>{rec.DoctorID}</span>
+                                  </div>
+                                  <div className="text-gray-700 font-medium">{rec.Diagnosis}</div>
+                                  <div className="text-gray-500">{rec.Treatment}</div>
+                                </div>
+                              ))}
+                            </div>
                           </div>
                         )}
 
