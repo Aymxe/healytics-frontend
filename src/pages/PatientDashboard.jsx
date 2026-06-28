@@ -59,7 +59,7 @@ const PatientDashboard = () => {
     return 'bg-blue-100 text-blue-700';
   };
 
-  const upcomingAppointments = appointments.filter(a => a.Status !== 'Cancelled').slice(0, 3);
+  const upcomingAppointments = appointments.filter(a => a.Status === 'Pending').slice(0, 3);
   const nextAppointment = upcomingAppointments[0];
 
   if (loading) {
@@ -146,7 +146,7 @@ const PatientDashboard = () => {
                 <span className="text-sm font-medium text-gray-800">Available doctors</span>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                {doctors.slice(0, 4).map((doc) => (
+                {doctors.filter(d => d.Availability === 'Available').slice(0, 4).map((doc) => (
                   <div key={doc.DoctorID} className="bg-white rounded-xl border p-3 flex items-center gap-3 hover:border-gray-300 transition-colors">
                     <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 text-xs font-medium flex-shrink-0">
                       {doc.Name.replace('Dr.', '').charAt(0)}

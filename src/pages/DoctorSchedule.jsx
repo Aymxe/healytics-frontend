@@ -179,7 +179,7 @@ const DoctorSchedule = () => {
                         </div>
                       </div>
                       <div className="text-xs text-gray-400">
-                        {new Date(appt.AppointmentDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {new Date(appt.AppointmentDate).toLocaleDateString()}
                       </div>
                       <span className={`text-xs px-2 py-0.5 rounded-full ${STATUS_COLOR[appt.Status] || 'bg-gray-100 text-gray-500'}`}>
                         {appt.Status}
