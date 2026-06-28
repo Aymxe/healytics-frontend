@@ -195,6 +195,9 @@ const DoctorDashboard = () => {
                       </div>
                       <div className="text-right">
                         <div className="text-xs text-gray-500">{new Date(appt.AppointmentDate).toLocaleDateString()}</div>
+                        {appt.AppointmentTime && (
+                          <div className="text-xs text-blue-500 font-medium">{appt.AppointmentTime}</div>
+                        )}
                         <span className={`text-xs px-2 py-0.5 rounded-full mt-1 inline-block ${getStatusColor(appt.Status)}`}>
                           {appt.Status}
                         </span>
@@ -213,8 +216,8 @@ const DoctorDashboard = () => {
                             <div className="text-sm font-medium">{appt.Gender || '—'}</div>
                           </div>
                           <div className="bg-gray-50 rounded-lg p-2">
-                            <div className="text-xs text-gray-400">Specialty</div>
-                            <div className="text-sm font-medium">{appt.RecommendedSpecialty || '—'}</div>
+                            <div className="text-xs text-gray-400">Time</div>
+                            <div className="text-sm font-medium">{appt.AppointmentTime || '—'}</div>
                           </div>
                         </div>
 
