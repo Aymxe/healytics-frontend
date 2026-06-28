@@ -228,18 +228,30 @@ const DoctorPatients = () => {
                   .filter((a) => a.PatientID === selected.PatientID)
                   .sort((a, b) => new Date(b.AppointmentDate) - new Date(a.AppointmentDate))
                   .map((appt, i) => (
-                    <div key={appt.AppointmentID} className={`flex items-center gap-3 px-4 py-3 border-b last:border-b-0 ${i % 2 === 0 ? '' : 'bg-gray-50'}`}>
-                      <div className="w-2 h-2 rounded-full bg-blue-400 flex-shrink-0"></div>
-                      <div className="flex-1">
-                        <div className="text-xs text-gray-500">{new Date(appt.AppointmentDate).toLocaleDateString()}</div>
+                    <div key={appt.AppointmentID} className={`px-4 py-3 border-b last:border-b-0 ${i % 2 === 0 ? '' : 'bg-gray-50'}`}>
+                      <div className="flex items-center gap-3">
+                        <div className="w-2 h-2 rounded-full bg-blue-400 flex-shrink-0"></div>
+                        <div className="flex-1">
+                          <div className="text-xs text-gray-600 font-medium">
+                            {new Date(appt.AppointmentDate).toLocaleDateString()}
+                            {appt.AppointmentTime && (
+                              <span className="ml-2 text-blue-500 font-semibold">{appt.AppointmentTime}</span>
+                            )}
+                          </div>
+                          {appt.SymptomInput && (
+                            <div className="text-xs text-gray-400 mt-0.5 truncate max-w-xs">
+                              {appt.SymptomInput}
+                            </div>
+                          )}
+                        </div>
+                        <span className={`text-xs px-2 py-0.5 rounded-full flex-shrink-0 ${
+                          appt.Status === 'Completed' ? 'bg-green-100 text-green-700' :
+                          appt.Status === 'Pending' ? 'bg-yellow-100 text-yellow-700' :
+                          'bg-red-100 text-red-700'
+                        }`}>
+                          {appt.Status}
+                        </span>
                       </div>
-                      <span className={`text-xs px-2 py-0.5 rounded-full ${
-                        appt.Status === 'Completed' ? 'bg-green-100 text-green-700' :
-                        appt.Status === 'Pending' ? 'bg-yellow-100 text-yellow-700' :
-                        'bg-red-100 text-red-700'
-                      }`}>
-                        {appt.Status}
-                      </span>
                     </div>
                   ))}
               </div>

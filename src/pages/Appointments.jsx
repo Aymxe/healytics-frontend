@@ -59,7 +59,8 @@ const Appointments = () => {
       await patientAPI.bookAppointment({
         patientID: user.refID,
         doctorID: selectedDoctor,
-        appointmentDate: selectedDate, // DATE column — send YYYY-MM-DD only
+        appointmentDate: selectedDate,
+        appointmentTime: selectedTime,
         reason,
       });
       showToast('Appointment booked successfully!', 'success');
