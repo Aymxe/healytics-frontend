@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Sidebar from '../components/Sidebar';
 import ConfirmModal from '../components/ConfirmModal';
@@ -11,6 +11,7 @@ import { patientAPI, doctorAPI, appointmentAPI } from '../services/api';
 const Appointments = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const { showToast } = useToast();
   const { markAllRead } = useNotifications();
   const [appointments, setAppointments] = useState([]);
@@ -38,6 +39,12 @@ const Appointments = () => {
         console.error(err);
       } finally {
         setLoading(false);
+        // Pre-fill from chatbot recommendation
+        if (location.state?.doctorID) {
+          setSelectedDoctor(location.state.doctorID);
+          setReason(location.state.symptoms || '');
+          setShowBook(true);
+        }
       }
     };
     fetchData();
