@@ -8,6 +8,70 @@ import { useToast } from '../context/ToastContext';
 import { useNotifications } from '../context/NotificationContext';
 import { patientAPI, doctorAPI, appointmentAPI } from '../services/api';
 
+const AppointmentRow = ({ appt, i, getStatusColor, onCancel }) => {
+  const [expanded, setExpanded] = useState(false);
+  return (
+    <div className={`border-b last:border-b-0 ${i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="w-full flex items-center gap-4 px-5 py-4 text-left hover:bg-blue-50 transition-colors"
+      >
+        <div className="w-2 h-2 rounded-full bg-blue-600 flex-shrink-0"></div>
+        <div className="flex-1">
+          <div className="text-sm font-medium text-gray-800">{appt.DoctorName}</div>
+          <div className="text-xs text-gray-400">{appt.Specialty}</div>
+        </div>
+        <div className="text-right">
+          <div className="text-xs text-gray-500">{new Date(appt.AppointmentDate).toLocaleDateString()}</div>
+          {appt.AppointmentTime && (
+            <div className="text-xs text-blue-500 font-medium">{appt.AppointmentTime}</div>
+          )}
+        </div>
+        <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(appt.Status)}`}>
+          {appt.Status}
+        </span>
+        <span className="text-xs text-gray-400">{expanded ? '▲' : '▼'}</span>
+      </button>
+
+      {expanded && (
+        <div className="px-5 pb-4 border-t bg-blue-50">
+          <div className="pt-3 grid grid-cols-2 gap-3 text-xs">
+            <div>
+              <span className="text-gray-400">Doctor</span>
+              <div className="font-medium text-gray-700">{appt.DoctorName} — {appt.Specialty}</div>
+            </div>
+            <div>
+              <span className="text-gray-400">Date & Time</span>
+              <div className="font-medium text-gray-700">
+                {new Date(appt.AppointmentDate).toLocaleDateString()}
+                {appt.AppointmentTime && <span className="ml-2 text-blue-600">{appt.AppointmentTime}</span>}
+              </div>
+            </div>
+            <div>
+              <span className="text-gray-400">Status</span>
+              <div className="font-medium text-gray-700">{appt.Status}</div>
+            </div>
+            {appt.SymptomInput && (
+              <div className="col-span-2">
+                <span className="text-gray-400">Your notes</span>
+                <div className="font-medium text-gray-700">{appt.SymptomInput}</div>
+              </div>
+            )}
+          </div>
+          {appt.Status === 'Pending' && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onCancel(); }}
+              className="mt-3 text-xs text-red-500 hover:text-red-700 hover:underline"
+            >
+              Cancel appointment
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const Appointments = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -219,26 +283,13 @@ const Appointments = () => {
               />
             ) : (
               appointments.map((appt, i) => (
-                <div key={appt.AppointmentID} className={`flex items-center gap-4 px-5 py-4 border-b last:border-b-0 ${i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
-                  <div className="w-2 h-2 rounded-full bg-blue-600 flex-shrink-0"></div>
-                  <div className="flex-1">
-                    <div className="text-sm font-medium text-gray-800">{appt.DoctorName}</div>
-                    <div className="text-xs text-gray-400">{appt.Specialty}</div>
-                  </div>
-                  <div className="text-xs text-gray-500">{new Date(appt.AppointmentDate).toLocaleDateString()}</div>
-                  <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(appt.Status)}`}>
-                    {appt.Status}
-                  </span>
-                  {/* ✅ Cancel button — only show for Pending */}
-                  {appt.Status === 'Pending' && (
-                    <button
-                      onClick={() => setConfirmCancel(appt.AppointmentID)}
-                      className="text-xs text-red-500 hover:text-red-700 hover:underline ml-2"
-                    >
-                      Cancel
-                    </button>
-                  )}
-                </div>
+                <AppointmentRow
+                  key={appt.AppointmentID}
+                  appt={appt}
+                  i={i}
+                  getStatusColor={getStatusColor}
+                  onCancel={() => setConfirmCancel(appt.AppointmentID)}
+                />
               ))
             )}
           </div>
